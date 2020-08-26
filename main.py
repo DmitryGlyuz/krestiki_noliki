@@ -3,54 +3,89 @@ import random
 # Initializing field
 field_dict = {}
 abc = ['A', 'B', 'C']
-for i in abc:
-    for n in range(1, 4):
-        field_dict.update({i + str(n): '-'})
+numbers = [str(number) for number in range(1, 4)]
+for letter in abc:
+    for number in numbers:
+        field_dict.update({letter + number: '-'})
 
 # List with available cells
 available_cells = list(field_dict.keys())
-print(available_cells)
+
+# Making scan list
+scan_list = []
+# Horizontal
+for number in numbers:
+    scan_list.append([letter + number for letter in abc])
+# Vertical
+for letter in abc:
+    scan_list.append([letter + number for number in numbers])
+
+
+# Diagonals
+def add_diagonal(numbers_list):
+    scan_list.append([letter + number for letter, number in zip(abc, numbers_list)])
+
+
+add_diagonal(numbers)
+add_diagonal(reversed(numbers))
 
 
 # This function shows field
 def show_field():
     print('\n  A B C')
-    for line in range(1, 4):
-        field_line = str(line)
-        for letter in abc:
-            field_line += ' ' + field_dict[letter + str(line)]
+    for number in numbers:
+        field_line = number
+        for show_field_letter in abc:
+            field_line += ' ' + field_dict[show_field_letter + number]
         print(field_line)
 
 
+# Update field
 def update_field(cell_name, sign):
+    # Open acceыs to write game-Over Boolean
     global game_over
-    def check_for_winner(line_list):
-        for sign in ['X', 'O']:
-            if line_list.count(sign) == 3:
-                return sign
+
+    # This functions finds if there three signs in line
+    def check_for_winner(line):
+        for xo_sign in ['X', 'O']:
+            if line.count(xo_sign) == 3:
+                return xo_sign
         else:
             return False
+
+    # Change the vale in cell
     field_dict[cell_name] = sign
     available_cells.remove(cell_name)
 
+    # Show updated field
+    show_field()
+
     # Scan lines
-    for letter in abc:
-        scanning_line = []
-        for i in range(1, 4):
-            scanning_line.append(field_dict[letter + str(i)])
-        win_sign = check_for_winner(scanning_line)
+    # Go through scan_list
+    for line in scan_list:
+        # Get signs from current line
+        line_content = [field_dict[key] for key in line]
+
+        # Check if there are three signs
+        win_sign = check_for_winner(line_content)
+
+        # Stop scanning if someone wins
         if win_sign is not False:
             break
-    show_field()
+
+    # Show message if someone wins
     if win_sign is not False:
         final = 'You won!' if user_sign == win_sign else 'You lost!'
         print(final)
         game_over = True
-    if not available_cells:
+
+    # Show message if there are no available cells
+    elif not available_cells:
         print('No available cells.')
         game_over = True
 
 
+# Computer's turn
 def computer_turn():
     pc_turn = random.choice(available_cells)
     print(f'\nMy turn: {pc_turn}')
@@ -75,7 +110,11 @@ if __name__ == '__main__':
             user_sign, pc_sign = 'O', 'X'
         else:
             print('Wrong value. Try again.')
+
     show_field()
+
+    # Show message who turns first
+    # and start the game
     first_turn = ' make the first turn!'
     if pc_sign == 'X':
         print('I' + first_turn)
@@ -85,10 +124,13 @@ if __name__ == '__main__':
         user_turn = True
     game_over = False
     while game_over is False:
+        # User's turn
         if user_turn is True:
             turn_done = False
             while turn_done is False:
+
                 turn = input('\nYour turn: ').upper()
+                # Check if input is correct
                 if turn in available_cells:
                     update_field(turn, user_sign)
                     turn_done = True
@@ -97,6 +139,7 @@ if __name__ == '__main__':
                 else:
                     print('Wrong value. Try again!')
             user_turn = False
+        # Computer's turn
         else:
             computer_turn()
             user_turn = True
