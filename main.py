@@ -29,6 +29,9 @@ def add_diagonal(numbers_list):
 add_diagonal(numbers)
 add_diagonal(reversed(numbers))
 
+def get_content(line_in_list):
+    return [field_dict[key] for key in line_in_list]
+
 
 # This function shows field
 def show_field():
@@ -42,7 +45,7 @@ def show_field():
 
 # Update field
 def update_field(cell_name, sign):
-    # Open acceыs to write game-Over Boolean
+    # Open access to write game-Over Boolean
     global game_over
 
     # This functions finds if there three signs in line
@@ -64,7 +67,7 @@ def update_field(cell_name, sign):
     # Go through scan_list
     for line in scan_list:
         # Get signs from current line
-        line_content = [field_dict[key] for key in line]
+        line_content = get_content(line)
 
         # Check if there are three signs
         win_sign = check_for_winner(line_content)
@@ -87,7 +90,63 @@ def update_field(cell_name, sign):
 
 # Computer's turn
 def computer_turn():
-    pc_turn = random.choice(available_cells)
+    priorities = {
+        1: [],
+        2: [],
+        3: {}
+    }
+    available_lines = {}
+
+    def add_third_cell(priority):
+        sign = pc_sign if priority == 1 else user_sign
+        if line_content.count(sign) == 2 and '-' in line_content:
+            priorities[priority].append(line[line_content.index('-')])
+
+    for line in scan_list:
+        line_content = get_content(line)
+        if priorities[1] or (line_content.count(pc_sign) == 2 and '-' in line_content):
+            add_third_cell(1)
+        elif line_content.count(user_sign) == 2 and '-' in line_content:
+            add_third_cell(2)
+    if priorities[1]:
+        pc_turn = random.choice(priorities[1])
+    elif priorities[2]:
+        pc_turn = random.choice(priorities[2])
+    else:
+        for cell in field_dict.keys():
+            # Make a key in priorities dictionary
+            priorities[3][cell] = 0
+            available_lines[cell] = []
+
+            # Make a list with lines which current cell is included to
+            for line in scan_list:
+                if cell in line:
+                    available_lines[cell].append(line)
+
+            # Count priority
+            for line in available_lines[cell]:
+                line_content = get_content(line)
+                if user_sign in line_content and pc_sign not in line_content:
+                    priorities[3][cell] += 1
+                if pc_sign in line_content and user_sign not in line_content:
+                    priorities[3][cell] += 1
+                if line_content.count('-') == 3:
+                    priorities[3][cell] += 1
+
+        max_priority = 0
+        for v in priorities[3].values():
+            if v > max_priority:
+                max_priority = v
+        max_priority_cells = []
+        for k, v in priorities[3].items():
+            if v == max_priority:
+                if k in available_cells:
+                    max_priority_cells.append(k)
+
+        if max_priority_cells:
+            pc_turn = random.choice(max_priority_cells)
+        else:
+            pc_turn = random.choice(available_cells)
     print(f'\nMy turn: {pc_turn}')
     update_field(pc_turn, pc_sign)
 
@@ -128,7 +187,6 @@ if __name__ == '__main__':
         if user_turn is True:
             turn_done = False
             while turn_done is False:
-
                 turn = input('\nYour turn: ').upper()
                 # Check if input is correct
                 if turn in available_cells:
