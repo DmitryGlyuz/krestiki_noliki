@@ -1,9 +1,11 @@
 import random
 
 # Initializing field
-field_dict = {}
-abc = ['A', 'B', 'C']
-numbers = [str(number) for number in range(1, 4)]
+field_dict = {}                                     # Dictionary with field's cells
+abc = ['A', 'B', 'C']                               # List with columns
+numbers = [str(number) for number in range(1, 4)]   # List with strings
+
+# Fill the dictionary
 for letter in abc:
     for number in numbers:
         field_dict.update({letter + number: '-'})
@@ -13,22 +15,24 @@ available_cells = list(field_dict.keys())
 
 # Making scan list
 scan_list = []
-# Horizontal
+# Horizontal lines
 for number in numbers:
     scan_list.append([letter + number for letter in abc])
-# Vertical
+# Vertical lines
 for letter in abc:
     scan_list.append([letter + number for number in numbers])
 
 
-# Diagonals
+# Diagonal lines
 def add_diagonal(numbers_list):
-    scan_list.append([letter + number for letter, number in zip(abc, numbers_list)])
+    scan_list.append([cell_letter + cell_number for cell_letter, cell_number in zip(abc, numbers_list)])
 
 
 add_diagonal(numbers)
 add_diagonal(reversed(numbers))
 
+
+# This function returns a list of values from cells contained in the list specified as a parameter
 def get_content(line_in_list):
     return [field_dict[key] for key in line_in_list]
 
@@ -37,7 +41,10 @@ def get_content(line_in_list):
 def show_field():
     print('\n  A B C')
     for number in numbers:
+        # Numerate the line
         field_line = number
+
+        # Fill the line
         for show_field_letter in abc:
             field_line += ' ' + field_dict[show_field_letter + number]
         print(field_line)
@@ -45,19 +52,21 @@ def show_field():
 
 # Update field
 def update_field(cell_name, sign):
-    # Open access to write game-Over Boolean
+    # Open access to write game_over Boolean
     global game_over
 
-    # This functions finds if there three signs in line
-    def check_for_winner(line):
+    # This function checks if there is a sign X or O on the line that repeats three times and returns it if so
+    def check_for_winner(line_to_check):
         for xo_sign in ['X', 'O']:
-            if line.count(xo_sign) == 3:
+            if line_to_check.count(xo_sign) == 3:
                 return xo_sign
         else:
             return False
 
-    # Change the vale in cell
+    # Change the value in specified cell
     field_dict[cell_name] = sign
+
+    # Remove this cell from available cells list
     available_cells.remove(cell_name)
 
     # Show updated field
@@ -90,31 +99,44 @@ def update_field(cell_name, sign):
 
 # Computer's turn
 def computer_turn():
+    # Dictionary with priorities
     priorities = {
-        1: [],
-        2: [],
-        3: {}
+        1: [],      # leads to victory
+        2: [],      # prevents opponent's victory
+        3: {}       # other cells, with rating
     }
+
     available_lines = {}
 
+    # This function puts a third sign in the line to defeat or prevent the opponent from winning
     def add_third_cell(priority):
+        # If priority is 1, it checks computer's signs
+        # If 2 it checks user's signs
         sign = pc_sign if priority == 1 else user_sign
         if line_content.count(sign) == 2 and '-' in line_content:
             priorities[priority].append(line[line_content.index('-')])
 
     for line in scan_list:
+        # Fill the line to scan
         line_content = get_content(line)
+
+        # Add cells which lead to victory to list with the first priority, don't scan nothing else
         if priorities[1] or (line_content.count(pc_sign) == 2 and '-' in line_content):
             add_third_cell(1)
+        # Add cells which prevent opponent's victory
         elif line_content.count(user_sign) == 2 and '-' in line_content:
             add_third_cell(2)
+    # If this list is not empty
     if priorities[1]:
+        # Take random cell from priorities[1]
         pc_turn = random.choice(priorities[1])
+    # Else if this list is not empty
     elif priorities[2]:
+        # Take random cell from priorities[2]
         pc_turn = random.choice(priorities[2])
     else:
         for cell in field_dict.keys():
-            # Make a key in priorities dictionary
+            # Make a key in priorities[3] dictionary
             priorities[3][cell] = 0
             available_lines[cell] = []
 
@@ -124,27 +146,35 @@ def computer_turn():
                     available_lines[cell].append(line)
 
             # Count priority
+            # Check all lines with current cell
             for line in available_lines[cell]:
                 line_content = get_content(line)
+                # +1 if there is a line with one user's sign and nothing else
                 if user_sign in line_content and pc_sign not in line_content:
                     priorities[3][cell] += 1
+                # +1 If there is a line with one computer's sign and nothing else
                 if pc_sign in line_content and user_sign not in line_content:
                     priorities[3][cell] += 1
+                # +1 if there is a free line
                 if line_content.count('-') == 3:
                     priorities[3][cell] += 1
 
+        # Find max priority
         max_priority = 0
         for v in priorities[3].values():
             if v > max_priority:
                 max_priority = v
+        # Make a list with cells with max priority
         max_priority_cells = []
         for k, v in priorities[3].items():
             if v == max_priority:
                 if k in available_cells:
                     max_priority_cells.append(k)
 
+        # Take a random value from the list with cells with max priority
         if max_priority_cells:
             pc_turn = random.choice(max_priority_cells)
+        # Or take any random value
         else:
             pc_turn = random.choice(available_cells)
     print(f'\nMy turn: {pc_turn}')
